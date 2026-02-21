@@ -1,25 +1,22 @@
-import { saveTraineeData, loadTraineeData } from './storage.js';
 
-function addTrainee() {
-  // TODO: Implement the logic
+import { loadTrainees, saveTrainees } from "./storage.js";
+
+function generateId() {
+  return Math.floor(Math.random() * 100000);
 }
 
-function updateTrainee() {
-  // TODO: Implement the logic
-}
+export async function addTrainee(params) {
+  if (!params || params.length < 2) {
+    throw new Error("ERROR: Must provide first and last name");
+  }
 
-function deleteTrainee() {
-  // TODO: Implement the logic
-}
+  const [firstName, lastName] = params;
+  const trainees = await loadTrainees();
 
-function fetchTrainee() {
-  // TODO: Implement the logic
-}
+  const id = generateId();
+  trainees.push({ id, firstName, lastName });
 
-function fetchAllTrainees() {
-  // TODO: Implement the logic
-}
+  await saveTrainees(trainees);
 
-export function handleTraineeCommand(subcommand, args) {
-  // Read the subcommand and call the appropriate function with the arguments
+  return `CREATED: ${id} ${firstName} ${lastName}`;
 }
