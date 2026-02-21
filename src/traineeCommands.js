@@ -1,4 +1,3 @@
-
 import { loadTrainees, saveTrainees } from "./storage.js";
 
 function generateId() {
@@ -19,4 +18,15 @@ export async function addTrainee(params) {
   await saveTrainees(trainees);
 
   return `CREATED: ${id} ${firstName} ${lastName}`;
+}
+
+export async function viewTrainees() {
+  const trainees = await loadTrainees();
+
+  if (!trainees || trainees.length === 0) {
+    return "No trainees found.";
+  }
+
+  const lines = trainees.map((t) => `${t.id} - ${t.firstName} ${t.lastName}`);
+  return `Trainees:\n${lines.join("\n")}\n\nTotal: ${trainees.length}`;
 }

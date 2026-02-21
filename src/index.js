@@ -1,16 +1,21 @@
+// src/index.js
 import promptSync from "prompt-sync";
 import chalk from "chalk";
 import { parseCommand } from "./command-parser.js";
-import { addTrainee } from "./TraineeCommands.js";
+import { addTrainee, viewTrainees } from "./traineeCommands.js";
 
 const prompt = promptSync({ sigint: true });
-
 console.log("School Manager CLI");
 console.log("Type QUIT or q to exit.");
 
-(async function () {
+(async function main() {
   while (true) {
-    const input = prompt("> ");
+    const input = prompt("> ").trim();
+
+    if (!input) {
+      console.log(chalk.yellow("ERROR: Invalid command format"));
+      continue;
+    }
 
     if (input === "QUIT" || input === "q") {
       console.log("Bye!");
@@ -19,10 +24,23 @@ console.log("Type QUIT or q to exit.");
 
     try {
       const parsed = parseCommand(input);
-      if (!parsed) continue;
 
+      // parseCommand 
+      if (!parsed) {
+        console.log(chalk.yellow("ERROR: Invalid command format"));
+        continue;
+      }
+
+      // TRAINEE ADD
       if (parsed.command === "TRAINEE" && parsed.subCommand === "ADD") {
         const result = await addTrainee(parsed.params);
+        console.log(chalk.green(result));
+        continue;
+      }
+
+      // TRAINEE VIEW
+      if (parsed.command === "TRAINEE" && parsed.subCommand === "VIEW") {
+        const result = await viewTrainees(parsed.params);
         console.log(chalk.green(result));
         continue;
       }
