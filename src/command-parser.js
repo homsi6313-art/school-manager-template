@@ -1,4 +1,3 @@
-// src/command-parser.js
 export function parseCommand(input) {
   if (typeof input !== "string") {
     throw new Error("ERROR: Invalid command");
@@ -7,7 +6,6 @@ export function parseCommand(input) {
   const trimmed = input.trim();
   if (!trimmed) {
     return null;
-    throw new Error("ERROR: Invalid command");
   }
 
   const parts = trimmed.split(" ").filter(Boolean);

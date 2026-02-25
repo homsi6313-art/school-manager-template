@@ -1,19 +1,16 @@
 [
   {
-    "id": 87421,
-    "name": "Intro to JavaScript Course",
-    "startDate": "20226-02-01",
-    "participants": [
-      12345,
-      12346
-    ]
-  },
-  {
     "id": 97286,
     "name": "JavaScript",
     "startDate": "2026-03-01",
     "participants": [
       73980
     ]
+  },
+  {
+    "id": 73848,
+    "name": "JavaScript",
+    "startDate": "2026-02-24",
+    "participants": []
   }
 ]

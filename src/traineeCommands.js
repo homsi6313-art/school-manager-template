@@ -1,33 +1,5 @@
-// src/traineeCommands.js
-import { loadTrainees, saveTrainees, loadCourses } from "./storage.js";
-
-function parseId(value) {
-  const n = Number(value);
-  return Number.isInteger(n) ? n : NaN;
-}
-
-function isValidId(id) {
-  return Number.isInteger(id) && id >= 0 && id <= 99999;
-}
-
-function generateUniqueId(existingIdsSet) {
-  for (let i = 0; i < 2000; i += 1) {
-    const id = Math.floor(Math.random() * 100000);
-    if (!existingIdsSet.has(id)) return id;
-  }
-  for (let id = 0; id <= 99999; id += 1) {
-    if (!existingIdsSet.has(id)) return id;
-  }
-  throw new Error("ERROR: Could not generate a unique ID");
-}
-
-function traineeCoursesNames(traineeId) {
-  const courses = loadCourses();
-  return courses
-    .filter((c) => Array.isArray(c.participants) && c.participants.includes(traineeId))
-    .map((c) => c.name)
-    .sort((a, b) => a.localeCompare(b));
-}
+import { loadTrainees, saveTrainees, loadCourses, saveCourses } from "./storage.js";
+import { parseId, isValidId, generateUniqueId } from "./utils.js";
 
 function addTrainee(params) {
   if (!params || params.length < 2) {
@@ -38,10 +10,9 @@ function addTrainee(params) {
 
   const trainees = loadTrainees();
   const existingIds = new Set(trainees.map((t) => t.id));
-
   const id = generateUniqueId(existingIds);
-  trainees.push({ id, firstName, lastName });
 
+  trainees.push({ id, firstName, lastName });
   saveTrainees(trainees);
 
   return `CREATED: ${id} ${firstName} ${lastName}`;
@@ -66,20 +37,109 @@ function getTrainee(params) {
     throw new Error(`ERROR: Trainee with ID ${idStr} does not exist`);
   }
 
-  // ✅ return object so index.js prints it with JSON.stringify
-  return {
-    ...t,
-    courses: traineeCoursesNames(t.id),
-  };
+  const courses = loadCourses();
+  const joinedCourseNames = courses
+    .filter((c) => (c.participants || []).includes(id))
+    .map((c) => c.name);
+
+  const coursesLine = joinedCourseNames.length ? joinedCourseNames.join(", ") : "None";
+
+  return `${t.id} ${t.firstName} ${t.lastName}\nCourses: ${coursesLine}`;
 }
 
-// ✅ هذا هو الـ handler اللي لازم index.js يناديه
+function traineeGetAll() {
+  const trainees = loadTrainees().slice().sort((a, b) => a.id - b.id);
+
+  let result = "Trainees:\n";
+  for (const t of trainees) {
+    result += `${t.id} ${t.firstName} ${t.lastName}\n`;
+  }
+  result += `Total: ${trainees.length}\n`;
+
+  return result;
+}
+
+function deleteTrainee(params) {
+  if (!params || params.length < 1) {
+    throw new Error("ERROR: Must provide ID");
+  }
+
+  const [idStr] = params;
+  const id = parseId(idStr);
+
+  if (!isValidId(id)) {
+    throw new Error("ERROR: Invalid ID");
+  }
+
+  const trainees = loadTrainees();
+  const idx = trainees.findIndex((t) => t.id === id);
+
+  if (idx === -1) {
+    throw new Error(`ERROR: Trainee with ID ${idStr} does not exist`);
+  }
+
+  trainees.splice(idx, 1);
+  saveTrainees(trainees);
+
+  const courses = loadCourses();
+  let changed = false;
+
+  for (const course of courses) {
+    const participants = Array.isArray(course.participants) ? course.participants : [];
+    const filtered = participants.filter((pid) => pid !== id);
+
+    if (filtered.length !== participants.length) {
+      course.participants = filtered;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    saveCourses(courses);
+  }
+
+  return `DELETED: ${idStr}`;
+}
+
+function updateTrainee(params) {
+  if (!params || params.length < 3) {
+    throw new Error("ERROR: Must provide ID, first name and last name");
+  }
+
+  const [idStr, firstName, lastName] = params;
+  const id = parseId(idStr);
+
+  if (!isValidId(id)) {
+    throw new Error("ERROR: Invalid ID");
+  }
+
+  const trainees = loadTrainees();
+  const t = trainees.find((x) => x.id === id);
+
+  if (!t) {
+    throw new Error(`ERROR: Trainee with ID ${idStr} does not exist`);
+  }
+
+  t.firstName = firstName;
+  t.lastName = lastName;
+
+  saveTrainees(trainees);
+
+  return `UPDATED: ${id} ${firstName} ${lastName}`;
+}
+
 export function handleTraineeCommand(subCommand, params) {
-  switch (subCommand) {
+  switch (String(subCommand).toUpperCase()) {
     case "ADD":
       return addTrainee(params);
     case "GET":
       return getTrainee(params);
+    case "GETALL":
+      return traineeGetAll();
+    case "UPDATE":
+      return updateTrainee(params);
+    case "DELETE":
+      return deleteTrainee(params);
     default:
       throw new Error("ERROR: Invalid TRAINEE subcommand");
   }

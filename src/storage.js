@@ -1,16 +1,18 @@
-// src/storage.js
 import fs from "node:fs";
 import path from "node:path";
 
-const DATA_DIR = path.resolve(process.cwd(), "data");
-const TRAINEES_FILE = path.join(DATA_DIR, "trainees.json");
-const COURSES_FILE = path.join(DATA_DIR, "Courses.json");
+const DATA_DIR = path.join(process.cwd(), "data");
+
+const TRAINEES_PATH = path.join(DATA_DIR, "trainees.json");
+const COURSES_PATH = path.join(DATA_DIR, "courses.json");
 
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
 }
 
-function readJsonArray(filePath) {
+function safeReadJsonArray(filePath) {
   ensureDataDir();
 
   if (!fs.existsSync(filePath)) {
@@ -22,41 +24,30 @@ function readJsonArray(filePath) {
   if (!raw) return [];
 
   try {
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    // إذا الملف خربان لأي سبب: ما نفجّر البرنامج، بس نرجّع مصفوفة فاضية
     return [];
   }
 }
 
-function writeJsonArray(filePath, arr) {
+function writeJsonArray(filePath, data) {
   ensureDataDir();
-  if (!Array.isArray(arr)) throw new Error("ERROR: Internal storage error");
-
-  // كتابة آمنة: نكتب على temp ثم rename
-  const tmpPath = `${filePath}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(arr, null, 2), "utf-8");
-  fs.renameSync(tmpPath, filePath);
+  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
 }
 
 export function loadTrainees() {
-  return readJsonArray(TRAINEES_FILE);
+  return safeReadJsonArray(TRAINEES_PATH);
 }
 
-export function saveTrainees(trainees) {
-  writeJsonArray(TRAINEES_FILE, trainees);
+export function saveTrainees(data) {
+  writeJsonArray(TRAINEES_PATH, data);
 }
 
 export function loadCourses() {
-  return readJsonArray(COURSES_FILE);
+  return safeReadJsonArray(COURSES_PATH);
 }
 
-export function saveCourses(courses) {
-  writeJsonArray(COURSES_FILE, courses);
+export function saveCourses(data) {
+  writeJsonArray(COURSES_PATH, data);
 }
-// Backward-compatible exports (old names)
-export const loadCourseData = loadCourses;
-export const saveCourseData = saveCourses;
-export const loadTraineeData = loadTrainees;
-export const saveTraineeData = saveTrainees;
